@@ -55,7 +55,7 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
 define("utils", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.shuffle = exports.loadScript = void 0;
+    exports.safePlay = exports.shuffle = exports.loadScript = void 0;
     var head = document.getElementsByTagName('head')[0];
     function loadScript(src) {
         var script = document.createElement('script');
@@ -85,6 +85,19 @@ define("utils", ["require", "exports"], function (require, exports) {
         return array;
     }
     exports.shuffle = shuffle;
+    function safePlay(player) {
+        var promise = player.play();
+        if (promise !== undefined) {
+            promise.then(function () {
+                return;
+                // Autoplay started!
+            }).catch(function (error) {
+                player.controls(true);
+                return;
+            });
+        }
+    }
+    exports.safePlay = safePlay;
 });
 define("aitools", ["require", "exports", "utils"], function (require, exports, utils_1) {
     "use strict";
@@ -109,21 +122,43 @@ define("aitools", ["require", "exports", "utils"], function (require, exports, u
 define("api", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.postStart = exports.postEnd = exports.getStudy = exports.postError = exports.putCollect = void 0;
+    exports.postStart = exports.postEnd = exports.getStudy = exports.postError = exports.postAssembler = exports.putCollect = void 0;
     function putFormData(url, data) {
-        if (url === void 0) { url = ''; }
+        if (url === void 0) { url = ""; }
         return __awaiter(this, void 0, void 0, function () {
             var response;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, fetch(url, {
-                            method: 'PUT',
-                            mode: 'cors',
-                            cache: 'no-cache',
-                            credentials: 'same-origin',
-                            redirect: 'follow',
-                            referrerPolicy: 'no-referrer',
-                            body: data // body data type must match "Content-Type" header
+                            method: "PUT",
+                            mode: "cors",
+                            cache: "no-cache",
+                            credentials: "same-origin",
+                            redirect: "follow",
+                            referrerPolicy: "no-referrer",
+                            body: data,
+                        })];
+                    case 1:
+                        response = _a.sent();
+                        return [2 /*return*/, response]; // parses JSON response into native JavaScript objects
+                }
+            });
+        });
+    }
+    function postFrameData(url, data) {
+        if (url === void 0) { url = ""; }
+        return __awaiter(this, void 0, void 0, function () {
+            var response;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, fetch(url, {
+                            method: "POST",
+                            mode: "cors",
+                            cache: "no-cache",
+                            credentials: "same-origin",
+                            redirect: "follow",
+                            referrerPolicy: "no-referrer",
+                            body: data,
                         })];
                     case 1:
                         response = _a.sent();
@@ -133,22 +168,22 @@ define("api", ["require", "exports"], function (require, exports) {
         });
     }
     function putData(url, data) {
-        if (url === void 0) { url = ''; }
+        if (url === void 0) { url = ""; }
         return __awaiter(this, void 0, void 0, function () {
             var response;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, fetch(url, {
-                            method: 'PUT',
-                            mode: 'cors',
-                            cache: 'no-cache',
-                            credentials: 'same-origin',
-                            redirect: 'follow',
+                            method: "PUT",
+                            mode: "cors",
+                            cache: "no-cache",
+                            credentials: "same-origin",
+                            redirect: "follow",
                             headers: {
-                                'Content-Type': 'application/json',
+                                "Content-Type": "application/json",
                             },
-                            referrerPolicy: 'no-referrer',
-                            body: JSON.stringify(data) // body data type must match "Content-Type" header
+                            referrerPolicy: "no-referrer",
+                            body: JSON.stringify(data),
                         })];
                     case 1:
                         response = _a.sent();
@@ -163,13 +198,13 @@ define("api", ["require", "exports"], function (require, exports) {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, fetch(url, {
-                            method: 'GET',
-                            mode: 'cors',
-                            cache: 'no-cache',
-                            credentials: 'same-origin',
-                            redirect: 'follow',
-                            referrerPolicy: 'no-referrer',
-                            body: data // body data type must match "Content-Type" header
+                            method: "GET",
+                            mode: "cors",
+                            cache: "no-cache",
+                            credentials: "same-origin",
+                            redirect: "follow",
+                            referrerPolicy: "no-referrer",
+                            body: data,
                         })];
                     case 1:
                         response = _a.sent();
@@ -195,7 +230,8 @@ define("api", ["require", "exports"], function (require, exports) {
                             // putFormData can return 409 if frame is already collected or 404 if the study is ended
                             // If we reject the response the client will try to call putFormData again, which is not needed
                         }
-                        else if (api.name == 'putFormData' && (res.status == 409 || res.status == 404)) {
+                        else if (api.name == "putFormData" &&
+                            (res.status == 409 || res.status == 404)) {
                             resolve(res.json());
                         }
                         else {
@@ -216,14 +252,18 @@ define("api", ["require", "exports"], function (require, exports) {
             path = path.substr(1);
         }
         var url = API_URL + path;
-        console.log('URL', url, API_URL);
+        console.log("URL", url, API_URL);
         return url;
     }
     function putCollect(endpoint, data) {
         // Added support to lambda, save function is deprecated
-        return callApi(putFormData, 'https://j7yyaj32p6.execute-api.eu-west-1.amazonaws.com/dev/multipart', data);
+        return callApi(putFormData, "https://j7yyaj32p6.execute-api.eu-west-1.amazonaws.com/dev/multipart", data);
     }
     exports.putCollect = putCollect;
+    function postAssembler(data) {
+        return callApi(postFrameData, ASSEMBLER_URL, data);
+    }
+    exports.postAssembler = postAssembler;
     function postError(endpoint, data) {
         return callApi(putData, makeUrl("/study/collect/error"), data);
     }
@@ -241,6 +281,20 @@ define("api", ["require", "exports"], function (require, exports) {
     }
     exports.postStart = postStart;
 });
+define("interfaces", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.RecorderStates = void 0;
+    var RecorderStates;
+    (function (RecorderStates) {
+        RecorderStates["Paused"] = "paused";
+        RecorderStates["Stopped"] = "stopped";
+        RecorderStates["Playing"] = "playing";
+    })(RecorderStates = exports.RecorderStates || (exports.RecorderStates = {}));
+});
+// multi part format
+// json: string of the above interface, type application/json
+// data: image/video part of the capture
 define("survey", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -317,62 +371,55 @@ define("survey", ["require", "exports"], function (require, exports) {
     }
     exports.getQuestionValueByUrl = getQuestionValueByUrl;
 });
-define("interfaces", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-});
-// multi part format
-// json: string of the above interface, type application/json
-// data: image/video part of the capture
-define("stimulus", ["require", "exports"], function (require, exports) {
+define("stimulus", ["require", "exports", "utils"], function (require, exports, utils_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.renderVideo = exports.renderHtml = exports.renderImage = exports.renderBlank = exports.renderTarget = void 0;
     function renderTarget(selector) {
-        var target = document.createElement('div');
+        var target = document.createElement("div");
         var wrapper = document.querySelector(selector);
         if (!wrapper) {
             wrapper = document.body;
         }
         wrapper.appendChild(target);
-        target.style.display = 'flex';
-        target.style.justifyItems = 'center';
-        target.style.alignItems = 'center';
-        target.style.justifyContent = 'center';
-        target.style.width = '100%';
-        target.style.maxHeight = '70vh';
-        target.style.height = '100vh';
+        target.style.display = "flex";
+        target.style.justifyItems = "center";
+        target.style.alignItems = "center";
+        target.style.justifyContent = "center";
+        target.style.width = "100%";
+        target.style.maxHeight = "70vh";
+        target.style.height = "100vh";
         target.setAttribute("oncontextmenu", "return false;"); // Needed to disable right click context menu
         return target;
     }
     exports.renderTarget = renderTarget;
     function renderBlank(initCallback, consumeCallback, target, getData) {
         /*let text = document.createElement('h3')
-        let button = document.createElement('button')
-        button.innerText = 'continua'
-        button.onclick = consumeCallback
-        text.innerText = 'Premi il pulsante continua quando sei pronto per proseguire'
-        target.append(text,button)
-        return [text,button]*/
+          let button = document.createElement('button')
+          button.innerText = 'continua'
+          button.onclick = consumeCallback
+          text.innerText = 'Premi il pulsante continua quando sei pronto per proseguire'
+          target.append(text,button)
+          return [text,button]*/
         initCallback();
     }
     exports.renderBlank = renderBlank;
     function renderImage(initCallback, consumeCallback, stimulus, target) {
         var src;
-        var container = document.createElement('div');
+        var container = document.createElement("div");
         if (stimulus) {
-            if (typeof stimulus === 'object' && "src" in stimulus) {
+            if (typeof stimulus === "object" && "src" in stimulus) {
                 if (typeof stimulus.src !== "string") {
                     src = stimulus.src.map(function (s) {
                         return {
                             type: s.mimeType,
-                            src: s.url
+                            src: s.url,
                         };
                     });
                 }
             }
         }
-        console.log('image stimulus', src[0].src);
+        console.log("image stimulus", src[0].src);
         container.innerHTML = "\n     <img id=\"image-stimulus\" src=\"" + src[0].src + "\" style=\"width: 100%;height: auto;object-fit: contain\">\n     ";
         var size = 100;
         var ww = document.documentElement.clientWidth;
@@ -381,11 +428,11 @@ define("stimulus", ["require", "exports"], function (require, exports) {
         }
         container.style.maxWidth = IMAGE_MAX_SIZE + "px";
         container.style.width = size + "%";
-        container.style.height = '100%';
-        container.style.display = 'flex';
-        container.style.justifyContent = 'center';
+        container.style.height = "100%";
+        container.style.display = "flex";
+        container.style.justifyContent = "center";
         target.append(container);
-        document.getElementById('image-stimulus').onload = function () {
+        document.getElementById("image-stimulus").onload = function () {
             initCallback();
         };
         return [container];
@@ -393,7 +440,7 @@ define("stimulus", ["require", "exports"], function (require, exports) {
     exports.renderImage = renderImage;
     function renderHtml(initCallback, consumeCallback, stimulus, target) {
         var src;
-        var container = document.createElement('div');
+        var container = document.createElement("div");
         var isFile = false;
         var Fullscreen = false;
         if (stimulus) {
@@ -401,16 +448,16 @@ define("stimulus", ["require", "exports"], function (require, exports) {
                 src = stimulus["website"];
             }
             else {
-                if (typeof stimulus === 'object' && "src" in stimulus) {
+                if (typeof stimulus === "object" && "src" in stimulus) {
                     if (typeof stimulus.src !== "string") {
                         src = stimulus.src.map(function (s) {
                             return {
                                 type: s.mimeType,
-                                src: s.url
+                                src: s.url,
                             };
                         });
                         isFile = true;
-                        if (!src[0].type.includes('text')) {
+                        if (!src[0].type.includes("text")) {
                             throw new Error();
                         }
                         src = src[0].src;
@@ -419,30 +466,34 @@ define("stimulus", ["require", "exports"], function (require, exports) {
             }
         }
         function getIframe() {
-            return container.getElementsByClassName('html-stimulus').item(0);
+            return container
+                .getElementsByClassName("html-stimulus")
+                .item(0);
         }
         function getFullScreenBtn() {
-            return container.getElementsByClassName('html-fs-btn').item(0);
+            return container
+                .getElementsByClassName("html-fs-btn")
+                .item(0);
         }
         function getHtmlWrapper() {
-            return document.getElementById('html-wrapper');
+            return document.getElementById("html-wrapper");
         }
         function setFullScreen() {
             var wrap = getHtmlWrapper();
             var btn = getFullScreenBtn();
             if (Fullscreen) {
-                wrap.style.position = 'initial';
-                btn.textContent = 'fullscreen';
-                document.body.style.overflow = 'auto';
+                wrap.style.position = "initial";
+                btn.textContent = "fullscreen";
+                document.body.style.overflow = "auto";
                 Fullscreen = false;
             }
             else {
-                wrap.style.position = 'absolute';
-                wrap.style.left = '0px';
-                wrap.style.top = '0px';
-                btn.textContent = 'exit fullscreen';
+                wrap.style.position = "absolute";
+                wrap.style.left = "0px";
+                wrap.style.top = "0px";
+                btn.textContent = "exit fullscreen";
                 window.scrollTo(0, 0);
-                document.body.style.overflow = 'hidden';
+                document.body.style.overflow = "hidden";
                 Fullscreen = true;
             }
         }
@@ -453,8 +504,10 @@ define("stimulus", ["require", "exports"], function (require, exports) {
                     r.text().then(function (t) {
                         target.append(container);
                         container.innerHTML = "\n                        <div id=\"html-wrapper\" style=\"width: 100%;height: 100%;border: none\">\n                         <button type='button' class=\"html-fs-btn\">Fullscreen</button>\n                         <iframe class=\"html-stimulus\" style=\"width: 100%;height: 100%;border: none\"> \n                        </div>";
-                        var iframe = container.getElementsByClassName('html-stimulus').item(0);
-                        console.log('HTML stimulus', iframe);
+                        var iframe = container
+                            .getElementsByClassName("html-stimulus")
+                            .item(0);
+                        console.log("HTML stimulus", iframe);
                         var iframeDoc = iframe.contentDocument;
                         iframeDoc.open();
                         iframeDoc.write(t);
@@ -463,7 +516,7 @@ define("stimulus", ["require", "exports"], function (require, exports) {
                             initCallback();
                         };
                         container.style.width = "100%";
-                        container.style.height = '100%';
+                        container.style.height = "100%";
                         getFullScreenBtn().onclick = setFullScreen;
                         setFullScreen();
                     });
@@ -471,7 +524,8 @@ define("stimulus", ["require", "exports"], function (require, exports) {
                 else {
                     throw new Error();
                 }
-            }).catch(function () {
+            })
+                .catch(function () {
                 throw new Error();
             });
         }
@@ -486,84 +540,97 @@ define("stimulus", ["require", "exports"], function (require, exports) {
                 consumeCallback();
             };
             container.style.width = "100%";
-            container.style.height = '100%';
+            container.style.height = "100%";
             getFullScreenBtn().onclick = setFullScreen;
             setFullScreen();
         }
         return [container];
     }
     exports.renderHtml = renderHtml;
+    var videoFrame = document.getElementById("videoFrame");
     function renderVideo(initCallback, consumeCallback, stimulus, target, getData, onTimeUpdate, size, fakeDelay) {
+        // try {
+        //   videojs("video-player").dispose();
+        // } catch {}
         if (size === void 0) { size = 100; }
         if (fakeDelay === void 0) { fakeDelay = null; }
-        try {
-            videojs('video-player').dispose();
-        }
-        catch (_a) {
-        }
         var ww = document.documentElement.clientWidth;
-        console.log(ww, 'window width');
+        console.log(ww, "window width");
         if (ww < 800) {
             size = 100;
         }
-        var container = document.createElement('div');
-        container.style.maxWidth = VIDEO_MAX_SIZE + "px";
-        container.style.width = size + "%";
-        container.style.height = '100%';
+        //If it isn't "undefined" and it isn't "null", then it exists.
+        if (videoFrame == null) {
+            console.log("frame null");
+            var container = document.createElement("div");
+            container.style.maxWidth = VIDEO_MAX_SIZE + "px";
+            container.style.width = size + "%";
+            container.id = "videoFrame";
+            container.style.height = "100%";
+            container.innerHTML = "\n     <video id=\"video-player\" preload=\"auto\" class=\"video-js\" autoplay playsinline></video>\n     ";
+            videoFrame = container;
+        }
+        else {
+            console.log("next vid");
+            videoFrame.style.display = "block";
+        }
         if (fakeDelay === true) {
             fakeDelay = 5000;
         }
         if (fakeDelay === 0) {
             fakeDelay = null;
         }
+        console.log(videoFrame);
         // if (fakeDelay) {
         //     container.innerHTML = `
         //  <video id="video-player" preload="auto" class="video-js"></video>
         //  `
         // } else {
-        container.innerHTML = "\n     <video id=\"video-player\" preload=\"auto\" class=\"video-js\" autoplay></video>\n     ";
         // }
-        target.append(container);
+        target.append(videoFrame);
         var src;
         if (stimulus) {
-            if (typeof stimulus === 'object' && "src" in stimulus) {
+            if (typeof stimulus === "object" && "src" in stimulus) {
                 if (typeof stimulus.src !== "string") {
                     src = stimulus.src.map(function (s) {
                         return {
                             type: s.mimeType,
-                            src: s.url
+                            src: s.url,
                         };
                     });
                 }
             }
-            if (typeof stimulus === 'string') {
+            if (typeof stimulus === "string") {
                 src = stimulus;
             }
         }
-        var video = videojs('video-player');
+        var video = videojs("video-player");
         video.fluid(true);
-        console.log('video player', video);
+        console.log("video player", video);
         if (src) {
             video.src(src);
         }
         if (fakeDelay != null)
             video.autoplay(true);
-        video.on('play', function () {
+        video.on("play", function () {
+            video.controls(false);
             if (fakeDelay) {
                 video.pause();
-                video.addClass('vjs-waiting');
+                video.addClass("vjs-waiting");
                 return;
             }
             initCallback();
         });
-        video.on('ended', function () {
+        video.on("ended", function () {
             consumeCallback();
+            console.log("video end");
+            videoFrame.style.display = "none";
         });
         if (onTimeUpdate) {
-            video.on('timeupdate', function () {
+            video.on("timeupdate", function () {
                 if (fakeDelay) {
                     video.pause();
-                    video.addClass('vjs-waiting');
+                    video.addClass("vjs-waiting");
                     return;
                 }
                 onTimeUpdate(video.currentTime());
@@ -573,19 +640,20 @@ define("stimulus", ["require", "exports"], function (require, exports) {
             getData(function () {
                 return {
                     currentTime: video.currentTime(),
-                    video: video
+                    video: video,
                 };
             });
         }
         if (fakeDelay) {
-            video.addClass('vjs-waiting');
+            video.addClass("vjs-waiting");
             var interval_1 = setInterval(function () {
-                video.addClass('vjs-waiting');
+                // hack @FIXME
+                video.addClass("vjs-waiting");
             }, 100);
             setTimeout(function () {
-                video.removeClass('vjs-waiting');
+                video.removeClass("vjs-waiting");
                 video.autoplay(true);
-                video.play();
+                utils_2.safePlay(video);
                 clearInterval(interval_1);
                 fakeDelay = null;
             }, fakeDelay);
@@ -831,11 +899,11 @@ define("storage", ["require", "exports"], function (require, exports) {
     Storage.isPersistent();
 });
 ///<amd-module name='index'/>
-define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", "api", "fakeData", "storage"], function (require, exports, utils_2, camera_1, survey_1, stimulus_1, api_1, fakeData_1, storage_1) {
+define("index", ["require", "exports", "utils", "interfaces", "camera", "survey", "stimulus", "api", "fakeData", "storage", "utils"], function (require, exports, utils_3, interfaces_1, camera_1, survey_1, stimulus_1, api_1, fakeData_1, storage_1, utils_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.onStudyError = void 0;
-    var storagePrefix = 'surveyIndex';
+    var storagePrefix = "surveyIndex";
     var survey;
     //event that trigger the next stimulus.
     var onConsumedStimulus;
@@ -863,11 +931,11 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
         storage_1.Storage.setItem(storagePrefix + survey_1.getSurveyInfo().session, indexId.toString());
     }
     function getIndex() {
-        console.log('get indexId key', storagePrefix + survey_1.getSurveyInfo().session);
+        console.log("get indexId key", storagePrefix + survey_1.getSurveyInfo().session);
         var i = storage_1.Storage.getItem(storagePrefix + survey_1.getSurveyInfo().session);
-        console.log('got indexId', Number(i), i);
+        console.log("got indexId", Number(i), i);
         if (i != null) {
-            console.log('got indexId real', Number(i), i);
+            console.log("got indexId real", Number(i), i);
             return Number(i);
         }
         else {
@@ -904,7 +972,7 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
     }
     //fetch data of the stimulus
     function getStimulusData() {
-        console.log('stimulus data', stimulusData());
+        console.log("stimulus data", stimulusData());
         return stimulusData();
     }
     function createDataSendInterval() {
@@ -921,16 +989,16 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
         return __awaiter(this, void 0, void 0, function () {
             var dataCopy, file, formdata;
             return __generator(this, function (_a) {
-                console.log('save data', data);
+                console.log("save data", data);
                 dataCopy = __assign({}, data);
                 file = dataCopy.blob;
                 delete dataCopy.blob;
                 formdata = new FormData();
-                formdata.append('json', JSON.stringify(dataCopy));
-                formdata.append('data', file);
+                formdata.append("json", JSON.stringify(dataCopy));
+                formdata.append("data", file);
                 saveDataOnFlightRequests++;
                 retry(function () { return api_1.putCollect(survey.collect.destination, formdata); }, function (responce) {
-                    console.log('save data response', responce);
+                    console.log("save data response", responce);
                     saveDataOnFlightRequests--;
                 }, 1000);
                 return [2 /*return*/];
@@ -939,14 +1007,14 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
     }
     function getPanelId(key) {
         var finalPanelId = null;
-        var storageKey = 'surveypanelid' + key + survey_1.getSurveyInfo().session;
+        var storageKey = "surveypanelid" + key + survey_1.getSurveyInfo().session;
         var panel = storage_1.Storage.getItem(storageKey);
         finalPanelId = panel;
         var panelinput = survey_1.getQuestionValueByUrl(key);
         var queryString = window.location.search;
         var urlParams = new URLSearchParams(queryString);
         var panelquery = urlParams.get(key);
-        console.log('PREPANELID', key, panel, panelinput, panelquery);
+        console.log("PREPANELID", key, panel, panelinput, panelquery);
         // wrong data?
         if (panel != null && panelinput != null && panel != panelinput) {
             storage_1.Storage.setItem(storageKey, panelinput); // save panelinput as safer!
@@ -961,19 +1029,19 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
             storage_1.Storage.setItem(storageKey, panelquery); // save panelquery as missing!
             finalPanelId = panelquery;
         }
-        console.log('PANELID', key, finalPanelId);
+        console.log("PANELID", key, finalPanelId);
         return finalPanelId;
     }
     function debugVideo(blob) {
         var urlCreator = window.URL || window.webkitURL;
         var video = urlCreator.createObjectURL(blob);
-        var videoTag = document.querySelector('video');
+        var videoTag = document.querySelector("video");
         videoTag.src = video;
     }
     function debugFrame(frame) {
         var urlCreator = window.URL || window.webkitURL;
         var image = urlCreator.createObjectURL(frame);
-        var imgtag = document.getElementById('testImage');
+        var imgtag = document.getElementById("testImage");
         imgtag.src = image;
     }
     var getErrorDataObject = function (reason, native) {
@@ -985,7 +1053,7 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
             sessionId: survey_1.getSurveyInfo().session,
             pannelId: (_a = getPanelId(survey.pannel.key)) !== null && _a !== void 0 ? _a : undefined,
             reason: reason,
-            native: native
+            native: native,
         };
     };
     function getDataCollector(survey, stimulus) {
@@ -1013,55 +1081,56 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
                         },
                         group: window.RUN_GROUP || null,
                         frameindex: index,
-                        mimeType: blob.type
+                        mimeType: blob.type,
                     };
                 };
-                start = function () {
-                };
-                stop = function () {
-                };
+                start = function () { };
+                stop = function () { };
                 return [2 /*return*/, new Promise(function (resolve, reject) {
                         var intervalID;
                         var timeStamp = 0;
                         var recorder = null;
                         var setRecorderEvent = function (recorder) {
                             recorder.ondataavailable = function (blobev) {
-                                if (recorder.state !== 'recording') {
+                                if (recorder.state !== "recording") {
                                     return;
                                 }
-                                console.log('video blob', blobev.data, stimulus);
+                                console.log("video blob", blobev.data, stimulus);
                                 if (blobev.data.size === 0) {
                                     frameempty++;
-                                    console.error('video blob empty', indexId, frameindex);
+                                    console.error("video blob empty", indexId, frameindex);
                                 }
                                 else {
                                     frameempty = 0;
                                 }
-                                if (blobev.data.size === 0 && frameempty > MAX_EMPTY_FRAMES) { // camera error
-                                    return onStudyError('camera-error', "data is of size 0");
+                                if (blobev.data.size === 0 && frameempty > MAX_EMPTY_FRAMES) {
+                                    // camera error
+                                    return onStudyError("camera-error", "data is of size 0");
                                 }
                                 frameindex++;
-                                saveData(getDataObject(blobev.data, stimulus, timeStamp, indexId, frameindex, 'video'));
+                                saveData(getDataObject(blobev.data, stimulus, timeStamp, indexId, frameindex, "video"));
                             };
                         };
                         var checkRecorderBlob = function (recorder) {
                             recorder.ondataavailable = function (blobev) {
-                                console.log('video blob', blobev.data, stimulus);
+                                console.log("video blob", blobev.data, stimulus);
                                 if (blobev.data.size === 0) {
                                     frameempty++;
-                                    console.error('video blob empty', indexId, frameindex);
+                                    console.error("video blob empty", indexId, frameindex);
                                 }
                                 else {
                                     frameempty = 0;
                                 }
-                                if (blobev.data.size === 0 && frameempty > MAX_EMPTY_FRAMES) { // camera error
-                                    return onStudyError('camera-error', "data is of size 0");
+                                if (blobev.data.size === 0 && frameempty > MAX_EMPTY_FRAMES) {
+                                    // camera error
+                                    return onStudyError("camera-error", "data is of size 0");
                                 }
                             };
                         };
                         switch (collect.type) {
                             case "video":
-                                camera_1.initVideoStream().then(function () { return __awaiter(_this, void 0, void 0, function () {
+                                camera_1.initVideoStream()
+                                    .then(function () { return __awaiter(_this, void 0, void 0, function () {
                                     var _this = this;
                                     return __generator(this, function (_a) {
                                         switch (_a.label) {
@@ -1069,16 +1138,17 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
                                             case 1:
                                                 recorder = _a.sent();
                                                 setRecorderEvent(recorder);
+                                                console.log("old running");
                                                 start = function () {
-                                                    console.log('video stream start');
-                                                    if (recorder.state === 'paused') {
+                                                    console.log("video stream start");
+                                                    if (recorder.state === "paused") {
                                                         recorder.resume();
                                                     }
                                                     else {
                                                         recorder.start();
                                                     }
                                                     intervalID = createFpsInterval(function () {
-                                                        if (stimulus.type === 'video') {
+                                                        if (stimulus.type === "video") {
                                                             timeStamp = getStimulusData().currentTime;
                                                         }
                                                         recorder.requestData();
@@ -1093,7 +1163,7 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
                                                                 //     recorder.pause();
                                                                 // }
                                                                 recorder.stop();
-                                                                console.log('video stream stop');
+                                                                console.log("video stream stop");
                                                                 clearInterval(intervalID);
                                                                 return [4 /*yield*/, camera_1.getCameraRecorder()];
                                                             case 1:
@@ -1105,18 +1175,20 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
                                                 }); };
                                                 resolve({
                                                     start: start,
-                                                    stop: stop
+                                                    stop: stop,
                                                 });
                                                 return [2 /*return*/];
                                         }
                                     });
-                                }); }).catch(function (e) {
-                                    console.error('ERROR', e);
-                                    onStudyError('camera-error', e);
+                                }); })
+                                    .catch(function (e) {
+                                    console.error("ERROR", e);
+                                    onStudyError("camera-error", e);
                                 });
                                 break;
                             case "frame":
-                                camera_1.initFrameStream().then(function () { return __awaiter(_this, void 0, void 0, function () {
+                                camera_1.initFrameStream()
+                                    .then(function () { return __awaiter(_this, void 0, void 0, function () {
                                     var _this = this;
                                     return __generator(this, function (_a) {
                                         switch (_a.label) {
@@ -1125,30 +1197,35 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
                                                 recorder = _a.sent();
                                                 checkRecorderBlob(recorder);
                                                 start = function () {
-                                                    if (recorder.state === 'paused') {
+                                                    if (recorder.state === "paused") {
                                                         recorder.resume();
                                                     }
                                                     else {
                                                         recorder.start();
                                                     }
                                                     intervalID = createFpsInterval(function () {
-                                                        if (stimulus.type === 'video') {
+                                                        if (stimulus.type === "video") {
                                                             timeStamp = getStimulusData().currentTime;
                                                         }
                                                         recorder.requestData();
-                                                        console.log('FRAME ID', indexId);
-                                                        var data = getDataObject({}, stimulus, timeStamp, indexId, frameindex, 'frame');
-                                                        camera_1.getCameraFrame(collect.w, collect.h).then(function (frame) {
-                                                            console.log('image frame', frame, timeStamp);
+                                                        console.log("FRAME ID", indexId);
+                                                        var data = getDataObject({}, stimulus, timeStamp, indexId, frameindex, "frame");
+                                                        camera_1.getCameraFrame(collect.w, collect.h)
+                                                            .then(function (frame) {
+                                                            console.log("frame collected");
+                                                            console.log("image frame", frame, timeStamp);
                                                             frameindex++;
                                                             data.blob = frame;
                                                             data.mimeType = frame.type;
+                                                            console.log("about to save frame");
                                                             saveData(data);
+                                                            console.log("frame saved");
                                                             //++indexId
                                                             if (DEBUG) {
                                                                 // debugFrame(frame)
                                                             }
-                                                        }).catch(function (e) {
+                                                        })
+                                                            .catch(function (e) {
                                                             console.error(e);
                                                             onStudyError("camera-error", e);
                                                         });
@@ -1170,14 +1247,256 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
                                                 }); };
                                                 resolve({
                                                     start: start,
-                                                    stop: stop
+                                                    stop: stop,
                                                 });
                                                 return [2 /*return*/];
                                         }
                                     });
-                                }); }).catch(function (e) {
-                                    console.error('ERROR', e);
-                                    onStudyError('camera-error', e);
+                                }); })
+                                    .catch(function (e) {
+                                    console.error("ERROR", e);
+                                    onStudyError("camera-error", e);
+                                });
+                                break;
+                        }
+                    })];
+            });
+        });
+    }
+    function getFallbackDataCollector(survey, stimulus) {
+        return __awaiter(this, void 0, void 0, function () {
+            function sendFramesToAssembler(data) {
+                return __awaiter(this, void 0, void 0, function () {
+                    var dataCopy, file, formdata;
+                    return __generator(this, function (_a) {
+                        console.log("sendFrames", data);
+                        dataCopy = __assign({}, data);
+                        file = dataCopy.imgs;
+                        delete dataCopy.imgs;
+                        formdata = new FormData();
+                        formdata.append("json", JSON.stringify(dataCopy));
+                        formdata.append("data", file);
+                        saveDataOnFlightRequests++;
+                        api_1.postAssembler(formdata);
+                        return [2 /*return*/];
+                    });
+                });
+            }
+            var pannel, collect, getDataFrameObject, getDataObject, start, stop;
+            var _this = this;
+            return __generator(this, function (_a) {
+                console.log("fallback activated");
+                pannel = survey.pannel, collect = survey.collect;
+                getDataFrameObject = function (blob, stimulus, time, id, index, type) {
+                    var _a;
+                    increaseIndex();
+                    return {
+                        blob: blob,
+                        timestamp: new Date().toISOString(),
+                        survey: survey.survey,
+                        id: id,
+                        type: survey.collect.type,
+                        sessionId: survey_1.getSurveyInfo().session,
+                        pannelId: (_a = getPanelId(pannel.key)) !== null && _a !== void 0 ? _a : undefined,
+                        stimulus: {
+                            group: currentGroup.group,
+                            type: stimulus.type,
+                            id: stimulus.id,
+                            videoframe: time,
+                        },
+                        group: window.RUN_GROUP || null,
+                        frameindex: index,
+                        mimeType: "image/png",
+                    };
+                };
+                getDataObject = function (imgs, stimulus, time, id, index, type) {
+                    var _a;
+                    increaseIndex();
+                    console.log(imgs);
+                    return {
+                        imgs: imgs,
+                        timestamp: new Date().toISOString(),
+                        survey: survey.survey,
+                        id: id,
+                        type: survey.collect.type,
+                        sessionId: survey_1.getSurveyInfo().session,
+                        pannelId: (_a = getPanelId(pannel.key)) !== null && _a !== void 0 ? _a : undefined,
+                        stimulus: {
+                            group: currentGroup.group,
+                            type: stimulus.type,
+                            id: stimulus.id,
+                            videoframe: time,
+                        },
+                        group: window.RUN_GROUP || null,
+                        frameindex: index,
+                        mimeType: "img/png",
+                    };
+                };
+                start = function () { };
+                stop = function () { };
+                return [2 /*return*/, new Promise(function (resolve, reject) {
+                        var intervalID;
+                        var timeStamp = 0;
+                        var recorder = null;
+                        var setRecorderEvent = function (recorder) {
+                            recorder.ondataavailable = function (blobev) {
+                                if (recorder.state !== "recording") {
+                                    return;
+                                }
+                                console.log("video blob", blobev.data, stimulus);
+                                if (blobev.data.size === 0) {
+                                    frameempty++;
+                                    console.error("video blob empty", indexId, frameindex);
+                                }
+                                else {
+                                    frameempty = 0;
+                                }
+                                if (blobev.data.size === 0 && frameempty > MAX_EMPTY_FRAMES) {
+                                    // camera error
+                                    return onStudyError("camera-error", "data is of size 0");
+                                }
+                                frameindex++;
+                                saveData(getDataObject(blobev.data, stimulus, timeStamp, indexId, frameindex, "video"));
+                            };
+                        };
+                        var checkRecorderBlob = function (recorder) {
+                            recorder.ondataavailable = function (blobev) {
+                                console.log("video blob", blobev.data, stimulus);
+                                if (blobev.data.size === 0) {
+                                    frameempty++;
+                                    console.error("video blob empty", indexId, frameindex);
+                                }
+                                else {
+                                    frameempty = 0;
+                                }
+                                if (blobev.data.size === 0 && frameempty > MAX_EMPTY_FRAMES) {
+                                    // camera error
+                                    return onStudyError("camera-error", "data is of size 0");
+                                }
+                            };
+                        };
+                        console.log("stimulus type", collect.type);
+                        switch (collect.type) {
+                            case "video":
+                                camera_1.initFallbackVideoStream()
+                                    .then(function (stream) { return __awaiter(_this, void 0, void 0, function () {
+                                    var _this = this;
+                                    return __generator(this, function (_a) {
+                                        switch (_a.label) {
+                                            case 0: return [4 /*yield*/, camera_1.getFallbackRecorder()];
+                                            case 1:
+                                                recorder = _a.sent();
+                                                // recorder = await getCameraRecorder()
+                                                recorder.start(collect.w, collect.h);
+                                                console.log("recorder started");
+                                                recorder.state = interfaces_1.RecorderStates.Playing;
+                                                // setRecorderEvent(recorder
+                                                start = function () {
+                                                    console.log("video stream start");
+                                                    if (recorder.state === interfaces_1.RecorderStates.Paused ||
+                                                        recorder.state === interfaces_1.RecorderStates.Stopped) {
+                                                        recorder.start(collect.w, collect.h);
+                                                    }
+                                                    intervalID = createFpsInterval(function () {
+                                                        if (stimulus.type === "video") {
+                                                            timeStamp = getStimulusData().currentTime;
+                                                        }
+                                                        recorder.streamData();
+                                                        ++indexId;
+                                                    }, 8, false);
+                                                };
+                                                stop = function () { return __awaiter(_this, void 0, void 0, function () {
+                                                    return __generator(this, function (_a) {
+                                                        switch (_a.label) {
+                                                            case 0:
+                                                                // if (recorder.state === "recording") {
+                                                                //     recorder.pause();
+                                                                // }
+                                                                console.log("recorder ended");
+                                                                recorder.stop();
+                                                                recorder.state = interfaces_1.RecorderStates.Stopped;
+                                                                console.log("video stream stop");
+                                                                clearInterval(intervalID);
+                                                                sendFramesToAssembler(getDataObject(recorder.imgs.join(" "), stimulus, timeStamp, indexId, frameindex, "video"));
+                                                                return [4 /*yield*/, camera_1.getFallbackRecorder()];
+                                                            case 1:
+                                                                recorder = _a.sent();
+                                                                return [2 /*return*/];
+                                                        }
+                                                    });
+                                                }); };
+                                                resolve({
+                                                    start: start,
+                                                    stop: stop,
+                                                });
+                                                return [2 /*return*/];
+                                        }
+                                    });
+                                }); })
+                                    .catch(function (e) {
+                                    console.error("ERROR", e);
+                                    onStudyError("camera-error", e);
+                                });
+                                break;
+                            case "frame":
+                                console.log("frame activated");
+                                camera_1.initFrameStream()
+                                    .then(function () { return __awaiter(_this, void 0, void 0, function () {
+                                    var _this = this;
+                                    return __generator(this, function (_a) {
+                                        // recorder = await getCameraRecorder()
+                                        // checkRecorderBlob(recorder)
+                                        start = function () {
+                                            // if (recorder.state === 'paused') {
+                                            //     recorder.resume()
+                                            // } else {
+                                            //     recorder.start()
+                                            // }
+                                            intervalID = createFpsInterval(function () {
+                                                if (stimulus.type === "video") {
+                                                    timeStamp = getStimulusData().currentTime;
+                                                }
+                                                // recorder.requestData()
+                                                console.log("FRAME ID", indexId);
+                                                console.log("about to collect frame", collect.w, collect.h);
+                                                var data = getDataFrameObject({}, stimulus, timeStamp, indexId, frameindex, "frame");
+                                                camera_1.getCameraFrame(collect.w, collect.h)
+                                                    .then(function (frame) {
+                                                    console.log("frame gotten successfully");
+                                                    console.log("image frame", frame, timeStamp);
+                                                    frameindex++;
+                                                    data.blob = frame;
+                                                    console.log(frame);
+                                                    data.mimeType = frame.type;
+                                                    saveData(data);
+                                                    //++indexId
+                                                    if (DEBUG) {
+                                                        // debugFrame(frame)
+                                                    }
+                                                })
+                                                    .catch(function (e) {
+                                                    console.error(e);
+                                                    onStudyError("camera-error", e);
+                                                });
+                                            }, collect.fps);
+                                        };
+                                        stop = function () { return __awaiter(_this, void 0, void 0, function () {
+                                            return __generator(this, function (_a) {
+                                                clearInterval(intervalID);
+                                                return [2 /*return*/];
+                                            });
+                                        }); };
+                                        resolve({
+                                            start: start,
+                                            stop: stop,
+                                        });
+                                        return [2 /*return*/];
+                                    });
+                                }); })
+                                    .catch(function (e) {
+                                    console.log(e);
+                                    // console.error('ERROR', e)
+                                    // onStudyError('camera-error', e)
                                 });
                                 break;
                         }
@@ -1190,21 +1509,24 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
         if (ended) {
             return;
         }
-        console.error('STUDY ERROR', reason, nativeError);
+        console.error("STUDY ERROR", reason, nativeError);
         // extract message from error
         if (nativeError && nativeError.message) {
             nativeError = nativeError.message;
         }
         setTimeout(function () {
-            retry(function () { return api_1.postError(survey.collect.destination, getErrorDataObject(reason, nativeError)); }, function () {
+            retry(function () {
+                return api_1.postError(survey.collect.destination, getErrorDataObject(reason, nativeError));
+            }, function () {
                 //redirect
-                if (survey.pannel.production.deny && survey.pannel.production.deny !== '') {
+                if (survey.pannel.production.deny &&
+                    survey.pannel.production.deny !== "") {
                     console.error("redirecting to", survey.pannel.production.deny);
                     window.location.replace(survey.pannel.production.deny);
                 }
                 else {
                     console.error("no redirect for error", survey.pannel.production.deny);
-                    window.location.replace('error');
+                    window.location.replace("error");
                 }
                 enableNext();
             }, 1000);
@@ -1215,10 +1537,10 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
         var target;
         if (currentTarget) {
             target = currentTarget;
-            target.innerHTML = '';
+            target.innerHTML = "";
         }
         else {
-            target = stimulus_1.renderTarget('.sg-question-set');
+            target = stimulus_1.renderTarget(".sg-question-set");
             currentTarget = target;
         }
         frameindex = 0; // restart frame index
@@ -1237,13 +1559,14 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
                 stimulus_1.renderHtml(initStimulus, consumeStimulus, stimulus, target);
                 break;
             case "video":
+                console.log("video");
                 stimulus_1.renderVideo(initStimulus, consumeStimulus, stimulus, target, setStimulusData, void 0, void 0, getVideoDelay(4000));
                 break;
         }
     }
     function clearStimulus() {
         if (currentTarget) {
-            currentTarget.innerHTML = '';
+            currentTarget.innerHTML = "";
         }
     }
     //called when we are done with the current stimulus and we want to go to the next
@@ -1255,7 +1578,7 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
         onInitializedStimulus();
     }
     function setStimulusData(f) {
-        console.log('set stimulus data', f, f());
+        console.log("set stimulus data", f, f());
         stimulusData = f;
     }
     function manageStimulusCollection(stimulus, collector) {
@@ -1269,27 +1592,27 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
             }, start);
         }
         else {
-            console.log('start collector', collector);
+            console.log("start collector", collector);
             collector.start();
         }
         if (stop && stop > 0) {
             setTimeout(function () {
-                console.log('stop collector', collector);
+                console.log("stop collector", collector);
                 collector.stop();
                 //add small margin to the stop to complete the data collection
-            }, stop + (1000 / survey.collect.fps / 2));
+            }, stop + 1000 / survey.collect.fps / 2);
         }
     }
     function manageStimulusExecution(stimulus) {
         var _this = this;
-        console.log('STIMULUS', stimulus);
+        console.log("STIMULUS", stimulus);
         //if there is a timer we will skip to the next stimulus when quested
         return new Promise(function (resolve) { return __awaiter(_this, void 0, void 0, function () {
             var t_1;
             return __generator(this, function (_a) {
                 if (stimulus.timer) {
                     t_1 = setTimeout(function () {
-                        console.log('stimulus timeout');
+                        console.log("stimulus timeout");
                         resolve();
                     }, stimulus.timer);
                     onConsumedStimulus = function () {
@@ -1349,10 +1672,11 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
             }
             return res;
         }
-        if (playlist.playlistOrder != null && playlist.playlistOrder == 'random') {
+        if (playlist.playlistOrder != null && playlist.playlistOrder == "random") {
             playlist.playlist = randomizePlaylist(playlist.playlist);
         }
-        else if (playlist.playlistOrder != null && (Array.isArray(playlist.playlistOrder) || playlist.playlistOrder)) {
+        else if (playlist.playlistOrder != null &&
+            (Array.isArray(playlist.playlistOrder) || playlist.playlistOrder)) {
             if (Array.isArray(playlist.playlistOrder) === false) {
                 playlist.playlistOrder = [playlist.playlistOrder];
             }
@@ -1369,7 +1693,7 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
                 }
                 order[index] = randomizePlaylist(el);
             }
-            order = order.filter(function (v) { return typeof v !== 'number'; });
+            order = order.filter(function (v) { return typeof v !== "number"; });
             playlist.playlist = order;
         }
         return playlist;
@@ -1418,51 +1742,49 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
     //         }
     //     }
     // }
-    function manageTutorialPermissions(data, video) {
-    }
-    function checkCameraPermissions() {
-    }
+    function manageTutorialPermissions(data, video) { }
+    function checkCameraPermissions() { }
     function addStyle(style) {
-        var st = document.createElement('style');
+        var st = document.createElement("style");
         st.innerText = style;
         document.head.appendChild(st);
     }
     function isVideoSetup() {
-        return (typeof VIDEO_SETUP !== 'undefined' && VIDEO_SETUP);
+        return typeof VIDEO_SETUP !== "undefined" && VIDEO_SETUP;
     }
     function isTutorial() {
-        return (typeof TUTORIAL !== 'undefined' && TUTORIAL);
+        return typeof TUTORIAL !== "undefined" && TUTORIAL;
     }
-    var nextButtonColor = '';
+    var nextButtonColor = "";
     var nextButtonDisabled = false;
     function disableNext() {
         if (nextButtonDisabled == true)
             return;
-        var input = document.querySelector('.sg-next-button');
+        var input = document.querySelector(".sg-next-button");
         if (!input)
             return;
         input.disabled = true;
-        nextButtonColor = input.style['background-color'];
-        input.style['background-color'] = '#888';
+        nextButtonColor = input.style["background-color"];
+        input.style["background-color"] = "#888";
         nextButtonDisabled = true;
     }
     function enableNext() {
         if (nextButtonDisabled == false)
             return;
-        var input = document.querySelector('.sg-next-button');
+        var input = document.querySelector(".sg-next-button");
         if (!input)
             return;
         input.disabled = false;
-        input.style['background-color'] = nextButtonColor;
-        input.setAttribute('nextbuttonready', 'true');
+        input.style["background-color"] = nextButtonColor;
+        input.setAttribute("nextbuttonready", "true");
         nextButtonDisabled = false;
     }
     function nextPage() {
         // wait for the request queue to become exausted
         function goToNextPage() {
             enableNext(); // reenable next button
-            var input = document.querySelector('.sg-next-button');
-            if (!input || input.getAttribute('nextbuttonready') != 'true')
+            var input = document.querySelector(".sg-next-button");
+            if (!input || input.getAttribute("nextbuttonready") != "true")
                 return;
             input.click();
         }
@@ -1470,7 +1792,8 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
         var token;
         var waittime = 100;
         token = setInterval(function () {
-            if (retry * waittime > 120 * 1000) { // timeout 2 minute?
+            if (retry * waittime > 120 * 1000) {
+                // timeout 2 minute?
                 // go to the next page
                 console.error("nextPage() timeout on saveDataOnFlightRequests");
             }
@@ -1483,7 +1806,7 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
         }, waittime);
     }
     function getVideoDelay(def) {
-        if (typeof VIDEO_DELAY === 'undefined') {
+        if (typeof VIDEO_DELAY === "undefined") {
             window.VIDEO_DELAY = def;
         }
         if (window.VIDEO_DELAY == 0) {
@@ -1492,49 +1815,49 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
         if (window.VIDEO_DELAY == false) {
             window.VIDEO_DELAY = null;
         }
-        if (window.VIDEO_DELAY == 'false') {
+        if (window.VIDEO_DELAY == "false") {
             window.VIDEO_DELAY = null;
         }
-        if (window.VIDEO_DELAY == 'False') {
+        if (window.VIDEO_DELAY == "False") {
             window.VIDEO_DELAY = null;
         }
         if (window.VIDEO_DELAY == true) {
             window.VIDEO_DELAY = true;
         }
-        if (window.VIDEO_DELAY == 'true') {
+        if (window.VIDEO_DELAY == "true") {
             window.VIDEO_DELAY = true;
         }
         return window.VIDEO_DELAY;
     }
     function init() {
         var _this = this;
-        if (typeof IMAGE_MAX_SIZE === 'undefined') {
+        if (typeof IMAGE_MAX_SIZE === "undefined") {
             window.IMAGE_MAX_SIZE = 1200;
         }
-        if (typeof RUN_GROUP === 'undefined') {
+        if (typeof RUN_GROUP === "undefined") {
             window.RUN_GROUP = undefined;
         }
-        if (typeof RUN_GROUP === 'number') {
+        if (typeof RUN_GROUP === "number") {
             window.RUN_GROUP = window.RUN_GROUP.toString();
         }
         if (typeof RUN_GROUP !== "string") {
             window.RUN_GROUP = undefined;
         }
-        if (typeof RUN_GROUP === 'string') {
+        if (typeof RUN_GROUP === "string") {
             window.RUN_GROUP = window.RUN_GROUP.trim();
-            if (RUN_GROUP == '') {
+            if (RUN_GROUP == "") {
                 window.RUN_GROUP = undefined;
             }
             // reset counters
             if (window.RUN_GROUP) {
                 //resetIndex()
-                console.log('RUN_GROUP', window.RUN_GROUP);
+                console.log("RUN_GROUP", window.RUN_GROUP);
             }
         }
-        if (typeof VIDEO_MAX_SIZE === 'undefined') {
+        if (typeof VIDEO_MAX_SIZE === "undefined") {
             window.VIDEO_MAX_SIZE = 1200;
         }
-        if (typeof VIDEO_SETUP_SIZE === 'undefined') {
+        if (typeof VIDEO_SETUP_SIZE === "undefined") {
             window.VIDEO_SETUP_SIZE = 100;
         }
         addStyle("\n        #video-player {\n            background-color: unset!important;\n            height: 100%!important;\n            padding-top: unset!important;\n        }\n    ");
@@ -1552,8 +1875,8 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
                 switch (_a.label) {
                     case 0:
                         survey = data;
-                        console.log('STUDY', survey);
-                        if (!(typeof INIT !== 'undefined' && INIT)) return [3 /*break*/, 1];
+                        console.log("STUDY", survey);
+                        if (!(typeof INIT !== "undefined" && INIT)) return [3 /*break*/, 1];
                         pId = getPanelId(survey.pannel.key);
                         data_1 = {
                             timestamp: new Date().toISOString(),
@@ -1568,7 +1891,7 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
                         }, 1000);
                         return [3 /*break*/, 6];
                     case 1:
-                        if (!(typeof END !== 'undefined' && END)) return [3 /*break*/, 2];
+                        if (!(typeof END !== "undefined" && END)) return [3 /*break*/, 2];
                         pId = getPanelId(survey.pannel.key);
                         data_2 = {
                             timestamp: new Date().toISOString(),
@@ -1595,11 +1918,11 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
                                 src: src,
                                 timer: null,
                                 type: null,
-                                id: null
+                                id: null,
                             };
                         }
                         havePermissions_1 = false;
-                        target_1 = stimulus_1.renderTarget('.sg-question-set');
+                        target_1 = stimulus_1.renderTarget(".sg-question-set");
                         stimulus_1.renderVideo(function () {
                             var video = getStimulusData().video;
                             video.controls(false);
@@ -1608,15 +1931,18 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
                             target_1.parentElement.removeChild(target_1);
                         }, media, target_1, setStimulusData, function (time) {
                             console.log(time);
-                            if (time >= survey.tutorial.cameraPermissionTimeStart / 1000 && !havePermissions_1) {
+                            if (time >= survey.tutorial.cameraPermissionTimeStart / 1000 &&
+                                !havePermissions_1) {
                                 var video_1 = getStimulusData().video;
                                 video_1.pause();
-                                camera_1.initVideoStream().then(function () {
+                                camera_1.initVideoStream()
+                                    .then(function () {
                                     havePermissions_1 = true;
                                     video_1.currentTime(survey.tutorial.cameraPermissionTimeEnd / 1000);
-                                    video_1.play();
-                                }).catch(function (e) {
-                                    onStudyError('camera-error', e);
+                                    utils_4.safePlay(video_1);
+                                })
+                                    .catch(function (e) {
+                                    onStudyError("camera-error", e);
                                 });
                             }
                         });
@@ -1626,11 +1952,11 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
                     case 3:
                         if (!isVideoSetup()) return [3 /*break*/, 5];
                         return [4 /*yield*/, camera_1.initVideoStream().catch(function (e) {
-                                onStudyError('camera-error', e);
+                                onStudyError("camera-error", e);
                             })];
                     case 4:
                         stream = _a.sent();
-                        target_2 = stimulus_1.renderTarget('.sg-question-set');
+                        target_2 = stimulus_1.renderTarget(".sg-question-set");
                         stimulus_1.renderVideo(function () {
                             var video = getStimulusData().video;
                             video.controls(false);
@@ -1642,12 +1968,11 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
                         video.tech().el().srcObject = stream;
                         // flip
                         try {
-                            video.tech().el().style['-webkit-transform'] = "scaleX(-1)";
-                            video.tech().el().style['webkit-transform'] = "scaleX(-1)";
-                            video.tech().el().style['transform'] = "scaleX(-1)";
+                            video.tech().el().style["-webkit-transform"] = "scaleX(-1)";
+                            video.tech().el().style["webkit-transform"] = "scaleX(-1)";
+                            video.tech().el().style["transform"] = "scaleX(-1)";
                         }
-                        catch (e) {
-                        }
+                        catch (e) { }
                         video.muted(true);
                         video.autoplay(true);
                         return [3 /*break*/, 6];
@@ -1659,7 +1984,7 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
                             return __generator(this, function (_a) {
                                 switch (_a.label) {
                                     case 0:
-                                        console.log('end');
+                                        console.log("end");
                                         //the end :)
                                         if (currentTarget) {
                                             parent_1 = currentTarget.parentElement;
@@ -1668,7 +1993,7 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
                                             parent_1.insertAdjacentText("afterbegin", "Completamento in corso, attendere");
                                         }
                                         ended = true;
-                                        if (!(survey.collect.type === 'video')) return [3 /*break*/, 4];
+                                        if (!(survey.collect.type === "video")) return [3 /*break*/, 4];
                                         _a.label = 1;
                                     case 1:
                                         _a.trys.push([1, 3, , 4]);
@@ -1683,7 +2008,7 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
                                         e_2 = _a.sent();
                                         return [3 /*break*/, 4];
                                     case 4:
-                                        if (!(survey.collect.type === 'frame')) return [3 /*break*/, 8];
+                                        if (!(survey.collect.type === "frame")) return [3 /*break*/, 8];
                                         _a.label = 5;
                                     case 5:
                                         _a.trys.push([5, 7, , 8]);
@@ -1713,7 +2038,7 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
                                     return __generator(this, function (_a) {
                                         switch (_a.label) {
                                             case 0:
-                                                console.log('group', group.playlist);
+                                                console.log("group", group.playlist);
                                                 index = 0;
                                                 manageStimulus = function () { return __awaiter(_this, void 0, void 0, function () {
                                                     var element, stimulus, collector, renderError, e_4;
@@ -1721,79 +2046,86 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
                                                         switch (_a.label) {
                                                             case 0:
                                                                 element = group.playlist[index];
-                                                                console.log('manage stimulus', index, element);
+                                                                console.log("manage stimulus", index, element);
                                                                 if (!element) {
                                                                     resolve();
                                                                     return [2 /*return*/];
                                                                 }
                                                                 if (!("group" in element && element.group)) return [3 /*break*/, 2];
                                                                 //is a group, lets do some ricorsion
-                                                                return [4 /*yield*/, stimulusLoop_1(element)
-                                                                    //retun to this loop
-                                                                ];
+                                                                return [4 /*yield*/, stimulusLoop_1(element)];
                                                             case 1:
                                                                 //is a group, lets do some ricorsion
                                                                 _a.sent();
                                                                 //retun to this loop
                                                                 currentGroup = group;
-                                                                return [3 /*break*/, 12];
+                                                                return [3 /*break*/, 15];
                                                             case 2:
-                                                                if (!("type" in element && element.type)) return [3 /*break*/, 12];
+                                                                if (!("type" in element && element.type)) return [3 /*break*/, 15];
                                                                 stimulus = element;
                                                                 currentStimulus = stimulus;
-                                                                return [4 /*yield*/, getDataCollector(survey, element)
-                                                                    //lets wait the stimulus to be ready
-                                                                ];
+                                                                collector = void 0;
+                                                                if (!(typeof MediaRecorder !== "undefined")) return [3 /*break*/, 4];
+                                                                // the variable is defined
+                                                                console.log(MediaRecorder);
+                                                                return [4 /*yield*/, getDataCollector(survey, element)];
                                                             case 3:
                                                                 collector = _a.sent();
-                                                                renderError = false;
-                                                                _a.label = 4;
+                                                                return [3 /*break*/, 6];
                                                             case 4:
-                                                                _a.trys.push([4, 6, , 7]);
-                                                                return [4 /*yield*/, manageStimulusInitialization(element)];
+                                                                console.log("Mediarecorder undefined. Legacy safari browser detected. ");
+                                                                console.log("using fallback");
+                                                                return [4 /*yield*/, getFallbackDataCollector(survey, element)];
                                                             case 5:
-                                                                _a.sent();
-                                                                return [3 /*break*/, 7];
+                                                                collector = _a.sent();
+                                                                _a.label = 6;
                                                             case 6:
-                                                                e_4 = _a.sent();
-                                                                console.error('ERROR', e_4);
-                                                                onStudyError('render-error', e_4);
-                                                                return [2 /*return*/];
+                                                                renderError = false;
+                                                                _a.label = 7;
                                                             case 7:
-                                                                if (!!renderError) return [3 /*break*/, 10];
+                                                                _a.trys.push([7, 9, , 10]);
+                                                                return [4 /*yield*/, manageStimulusInitialization(element)];
+                                                            case 8:
+                                                                _a.sent();
+                                                                return [3 /*break*/, 10];
+                                                            case 9:
+                                                                e_4 = _a.sent();
+                                                                console.error("ERROR", e_4);
+                                                                onStudyError("render-error", e_4);
+                                                                return [2 /*return*/];
+                                                            case 10:
+                                                                if (!!renderError) return [3 /*break*/, 13];
                                                                 //now we have to check when to start and stop collecting the data
                                                                 manageStimulusCollection(element, collector);
                                                                 //now we have to check when to go to the next stimulus
-                                                                return [4 /*yield*/, manageStimulusExecution(stimulus)
-                                                                    //stop the collection of data
-                                                                ];
-                                                            case 8:
+                                                                return [4 /*yield*/, manageStimulusExecution(stimulus)];
+                                                            case 11:
                                                                 //now we have to check when to go to the next stimulus
                                                                 _a.sent();
                                                                 //stop the collection of data
                                                                 return [4 /*yield*/, collector.stop()];
-                                                            case 9:
+                                                            case 12:
                                                                 //stop the collection of data
                                                                 _a.sent();
-                                                                return [3 /*break*/, 12];
-                                                            case 10: return [4 /*yield*/, collector.stop()];
-                                                            case 11:
+                                                                return [3 /*break*/, 15];
+                                                            case 13: return [4 /*yield*/, collector.stop()];
+                                                            case 14:
                                                                 _a.sent();
-                                                                _a.label = 12;
-                                                            case 12:
-                                                                if (!group.playlist[index + 1]) return [3 /*break*/, 14];
+                                                                _a.label = 15;
+                                                            case 15:
+                                                                if (!group.playlist[index + 1]) return [3 /*break*/, 17];
                                                                 index++;
                                                                 //go to the next stimulus
                                                                 return [4 /*yield*/, manageStimulus()];
-                                                            case 13:
+                                                            case 16:
                                                                 //go to the next stimulus
                                                                 _a.sent();
-                                                                return [3 /*break*/, 15];
-                                                            case 14:
+                                                                return [3 /*break*/, 18];
+                                                            case 17:
                                                                 //await onEnd()
                                                                 resolve();
                                                                 return [2 /*return*/];
-                                                            case 15: return [2 /*return*/];
+                                                            case 18: return [2 /*return*/];
                                                         }
                                                     });
                                                 }); };
@@ -1826,8 +2158,8 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
                             });
                         }
                         catch (e) {
-                            console.error('ERROR', e);
-                            onStudyError('js-error', e);
+                            console.error("ERROR", e);
+                            onStudyError("js-error", e);
                             //enableNext() no handled by onStudyError
                         }
                         _a.label = 6;
@@ -1837,26 +2169,25 @@ define("index", ["require", "exports", "utils", "camera", "survey", "stimulus", 
         }); }, 1000);
     }
     if (typeof $ === "undefined") {
-        utils_2.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js').then(function () {
+        utils_3.loadScript("https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js").then(function () {
             init();
         });
     }
     else {
         init();
     }
-    console.log('started');
+    console.log("started");
 });
-define("camera", ["require", "exports", "index"], function (require, exports, index_1) {
+define("camera", ["require", "exports", "interfaces", "index"], function (require, exports, interfaces_2, index_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getCameraFrameRecorder = exports.getCameraRecorder = exports.getCameraFrame = exports.initVideoStream = exports.initFrameStream = exports.prompCameraPermission = void 0;
+    exports.getFallbackRecorder = exports.FallbackRecorder = exports.getCameraFrameRecorder = exports.getCameraRecorder = exports.getCameraFrame = exports.initFallbackVideoStream = exports.initVideoStream = exports.initFrameStream = exports.prompCameraPermission = void 0;
     function prompCameraPermission(custom) {
         /* prevent flikering */
         var token = setTimeout(function () {
             custom.show();
         }, 300);
-        navigator.mediaDevices.getUserMedia({ audio: false, video: true })
-            .then(function (stream) {
+        navigator.mediaDevices.getUserMedia({ audio: false, video: true }).then(function (stream) {
             clearTimeout(token);
             // ok
             custom.hide();
@@ -1871,7 +2202,7 @@ define("camera", ["require", "exports", "index"], function (require, exports, in
     function getCamera(constraints) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                console.log('get camera stream');
+                console.log("get camera stream");
                 return [2 /*return*/, navigator.mediaDevices.getUserMedia(constraints)];
             });
         });
@@ -1879,21 +2210,25 @@ define("camera", ["require", "exports", "index"], function (require, exports, in
     var fotoStream;
     var videoStream;
     var videoRecorder;
+    var fallbackRecorder;
     function initFrameStream() {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        console.log('get camera stream frame');
+                        console.log("get camera stream frame");
+                        console.log(fotoStream);
                         if (!!fotoStream) return [3 /*break*/, 2];
-                        return [4 /*yield*/, getCamera({ video: { facingMode: { ideal: 'user' } }, audio: false })];
+                        return [4 /*yield*/, getCamera({
+                                video: true,
+                            })];
                     case 1:
                         fotoStream = _a.sent();
                         _a.label = 2;
                     case 2:
                         if (fotoStream.getVideoTracks().length > 0) {
-                            fotoStream.getVideoTracks()[0].addEventListener('ended', function (e) {
-                                index_1.onStudyError('camera-error', e);
+                            fotoStream.getVideoTracks()[0].addEventListener("ended", function (e) {
+                                index_1.onStudyError("camera-error", e);
                             });
                         }
                         return [2 /*return*/, fotoStream];
@@ -1908,25 +2243,31 @@ define("camera", ["require", "exports", "index"], function (require, exports, in
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        console.log('get camera stream video');
+                        console.log("get camera stream video");
                         if (!!videoStream) return [3 /*break*/, 5];
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 3, , 5]);
-                        return [4 /*yield*/, getCamera({ video: { facingMode: { ideal: 'user' } }, audio: true })];
+                        return [4 /*yield*/, getCamera({
+                                audio: true,
+                                video: true,
+                            })];
                     case 2:
                         videoStream = _a.sent();
                         return [3 /*break*/, 5];
                     case 3:
                         e_5 = _a.sent();
-                        return [4 /*yield*/, getCamera({ video: { facingMode: { ideal: 'user' } }, audio: false })];
+                        return [4 /*yield*/, getCamera({
+                                audio: false,
+                                video: true,
+                            })];
                     case 4:
                         videoStream = _a.sent();
                         return [3 /*break*/, 5];
                     case 5:
                         if (videoStream.getVideoTracks().length > 0) {
-                            videoStream.getVideoTracks()[0].addEventListener('ended', function (e) {
-                                index_1.onStudyError('camera-error', e);
+                            videoStream.getVideoTracks()[0].addEventListener("ended", function (e) {
+                                index_1.onStudyError("camera-error", e);
                             });
                         }
                         return [2 /*return*/, videoStream];
@@ -1935,40 +2276,102 @@ define("camera", ["require", "exports", "index"], function (require, exports, in
         });
     }
     exports.initVideoStream = initVideoStream;
+    function initFallbackVideoStream() {
+        return __awaiter(this, void 0, void 0, function () {
+            var e_6;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        console.log("get camera stream video");
+                        if (!!videoStream) return [3 /*break*/, 5];
+                        _a.label = 1;
+                    case 1:
+                        _a.trys.push([1, 3, , 5]);
+                        return [4 /*yield*/, getCamera({
+                                audio: true,
+                                video: true,
+                            })];
+                    case 2:
+                        videoStream = _a.sent();
+                        return [3 /*break*/, 5];
+                    case 3:
+                        e_6 = _a.sent();
+                        return [4 /*yield*/, getCamera({
+                                audio: false,
+                                video: true,
+                            })];
+                    case 4:
+                        videoStream = _a.sent();
+                        return [3 /*break*/, 5];
+                    case 5:
+                        if (videoStream.getVideoTracks().length > 0) {
+                            videoStream.getVideoTracks()[0].addEventListener("ended", function (e) {
+                                index_1.onStudyError("camera-error", e);
+                            });
+                        }
+                        return [2 /*return*/, videoStream];
+                }
+            });
+        });
+    }
+    exports.initFallbackVideoStream = initFallbackVideoStream;
     function getCameraFrame(w, h) {
         return __awaiter(this, void 0, void 0, function () {
             var stream;
             return __generator(this, function (_a) {
+                console.log("getCamerFrameFunction called");
                 stream = fotoStream;
                 return [2 /*return*/, new Promise(function (resolve, reject) {
-                        var video = document.createElement('video');
-                        var canvas = document.createElement('canvas');
-                        video.style.position = 'fixed';
-                        video.style.top = '9999px';
-                        canvas.style.position = 'fixed';
-                        canvas.style.top = '9999px';
+                        var video = document.createElement("video");
+                        var div = document.createElement("div");
+                        div.style.position = "fixed";
+                        div.style.top = "9999px";
+                        var canvas = document.createElement("canvas");
+                        console.log("modifying video");
+                        video.setAttribute("muted", "");
+                        video.setAttribute("playsinline", "");
+                        video.muted = true;
+                        video.playsInline = true;
+                        console.log("video modification done");
+                        canvas.style.position = "fixed";
+                        canvas.style.top = "9999px";
+                        div.appendChild(video);
+                        document.body.appendChild(div);
                         document.body.appendChild(canvas);
-                        document.body.appendChild(video);
-                        var ctx = canvas.getContext('2d');
+                        // document.body.appendChild(video);
+                        console.log("canvas modification done");
+                        var ctx = canvas.getContext("2d");
+                        console.log("get canvas context");
                         video.srcObject = stream;
-                        video.play().then(function () {
+                        console.log("src object attached");
+                        console.log(video);
+                        video
+                            .play()
+                            .then(function () {
+                            console.log("video is allowed to play");
                             if (!h || !w) {
                                 w = video.videoWidth;
                                 h = video.videoHeight;
                             }
+                            console.log("using video dimensions");
                             canvas.width = w;
                             canvas.height = h;
+                            console.log("drawing canvas");
                             ctx.drawImage(video, 0, 0, w, h);
                             canvas.toBlob(function (blob) {
+                                console.log("blobbing started");
                                 video.pause();
                                 video.srcObject = null;
                                 canvas.remove();
                                 video.remove();
                                 canvas = undefined;
                                 video = undefined;
+                                console.log("blobbing done");
                                 resolve(blob);
-                            }, 'image/jpeg', 1);
-                        }).catch(function (e) {
+                            }, "image/jpeg", 1);
+                        })
+                            .catch(function (e) {
+                            console.log(e, "video wasn't allowed to play");
                             video.pause();
                             video.srcObject = null;
                             canvas.remove();
@@ -2010,34 +2413,115 @@ define("camera", ["require", "exports", "index"], function (require, exports, in
         });
     }
     exports.getCameraFrameRecorder = getCameraFrameRecorder;
+    var FallbackRecorder = /** @class */ (function () {
+        function FallbackRecorder() {
+            this.imgs = [];
+            this.state = interfaces_2.RecorderStates.Stopped;
+        }
+        FallbackRecorder.prototype.requestData = function () {
+            return this.imgs.join(" ");
+        };
+        FallbackRecorder.prototype.pause = function () { };
+        FallbackRecorder.prototype.resume = function () { };
+        FallbackRecorder.prototype.start = function (h, w) {
+            var _this = this;
+            this.videoElement = document.createElement("video");
+            this.divElement = document.createElement("div");
+            this.canvas = document.createElement("canvas");
+            this.divElement.style.position = "fixed";
+            this.divElement.style.top = "9999px";
+            this.videoElement.setAttribute("muted", "");
+            this.videoElement.setAttribute("playsinline", "");
+            this.canvas.style.position = "fixed";
+            this.canvas.style.top = "9999px";
+            this.divElement.appendChild(this.videoElement);
+            document.body.appendChild(this.divElement);
+            document.body.appendChild(this.canvas);
+            this.state = interfaces_2.RecorderStates.Playing;
+            var stream = videoStream;
+            this.videoElement.srcObject = stream;
+            this.videoElement
+                .play()
+                .then(function () {
+                if (!_this.h || !_this.w) {
+                    _this.w = _this.videoElement.videoWidth;
+                    _this.h = _this.videoElement.videoHeight;
+                }
+                _this.ctx = _this.canvas.getContext("2d");
+                _this.canvas.width = _this.w;
+                _this.canvas.height = _this.h;
+            })
+                .catch(function (err) {
+                console.log(err);
+            });
+        };
+        FallbackRecorder.prototype.streamData = function () {
+            console.log("now");
+            this.ctx.drawImage(this.videoElement, 0, 0);
+            var imgFrame = this.canvas.toDataURL("image/png");
+            this.addImg(imgFrame);
+        };
+        FallbackRecorder.prototype.stop = function () {
+            this.videoElement.pause();
+            this.videoElement.srcObject = null;
+            this.canvas.remove();
+            this.videoElement.remove();
+            this.divElement.remove();
+            this.canvas = undefined;
+            this.videoElement = undefined;
+            this.divElement = undefined;
+            this.state = interfaces_2.RecorderStates.Stopped;
+        };
+        FallbackRecorder.prototype.addImg = function (img) {
+            this.imgs.push(img);
+        };
+        return FallbackRecorder;
+    }());
+    exports.FallbackRecorder = FallbackRecorder;
+    function getFallbackRecorder() {
+        return __awaiter(this, void 0, void 0, function () {
+            var stream, recorder;
+            return __generator(this, function (_a) {
+                stream = videoStream || fotoStream;
+                if (stream) {
+                    recorder = new FallbackRecorder();
+                    // let recorder = new MediaRecorder(stream)
+                    videoRecorder = recorder;
+                }
+                return [2 /*return*/, videoRecorder];
+            });
+        });
+    }
+    exports.getFallbackRecorder = getFallbackRecorder;
 });
+// video: { facingMode: "user", width: 640 },
 define("dialogs", ["require", "exports"], function (require, exports) {
     "use strict";
     var _a, _b;
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.hideDialog = exports.dialog = void 0;
-    var modal = "\n  <div class=\"modal micromodal-slide\" id=\"modal-1\" aria-hidden=\"true\">\n    <div class=\"modal__overlay\" tabindex=\"-1\" data-micromodal-close>\n      <div class=\"modal__container\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"modal-1-title\">\n        <header class=\"modal__header\">\n          <h2 class=\"modal__title\" id=\"modal-1-title\">\n            " + ((_a = window.EMOTIVA_CAMERA_PERMISSION_TITLE) !== null && _a !== void 0 ? _a : 'Permesso camera') + "\n          </h2>\n          <button class=\"modal__close\" aria-label=\"Close modal\" data-micromodal-close></button>\n        </header>\n        <main class=\"modal__content\" id=\"modal-1-content\">\n          <p>\n            " + ((_b = window.EMOTIVA_CAMERA_PERMISSION_BODY) !== null && _b !== void 0 ? _b : '') + "\n          </p>\n        </main>\n        <footer class=\"modal__footer\">\n          <!-- <button class=\"modal__btn modal__btn-primary\">Ok</button> -->\n          <button class=\"modal__btn\" data-micromodal-close aria-label=\"Close this dialog window\">Chiudi</button>\n        </footer>\n      </div>\n    </div>\n  </div>\n";
-    var style = document.createElement('style');
+    var modal = "\n  <div class=\"modal micromodal-slide\" id=\"modal-1\" aria-hidden=\"true\">\n    <div class=\"modal__overlay\" tabindex=\"-1\" data-micromodal-close>\n      <div class=\"modal__container\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"modal-1-title\">\n        <header class=\"modal__header\">\n          <h2 class=\"modal__title\" id=\"modal-1-title\">\n            " + ((_a = window.EMOTIVA_CAMERA_PERMISSION_TITLE) !== null && _a !== void 0 ? _a : "Permesso camera") + "\n          </h2>\n          <button class=\"modal__close\" aria-label=\"Close modal\" data-micromodal-close></button>\n        </header>\n        <main class=\"modal__content\" id=\"modal-1-content\">\n          <p>\n            " + ((_b = window.EMOTIVA_CAMERA_PERMISSION_BODY) !== null && _b !== void 0 ? _b : "") + "\n          </p>\n        </main>\n        <footer class=\"modal__footer\">\n          <!-- <button class=\"modal__btn modal__btn-primary\">Ok</button> -->\n          <button class=\"modal__btn\" data-micromodal-close aria-label=\"Close this dialog window\">Chiudi</button>\n        </footer>\n      </div>\n    </div>\n  </div>\n";
+    var style = document.createElement("style");
     style.innerHTML = "\n/**************************\\\n  Basic Modal Styles\n\\**************************/\n\n.modal {\n  font-family: -apple-system,BlinkMacSystemFont,avenir next,avenir,helvetica neue,helvetica,ubuntu,roboto,noto,segoe ui,arial,sans-serif;\n}\n\n.modal__overlay {\n  position: fixed;\n  top: 0;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  background: rgba(0,0,0,0.6);\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}\n\n.modal__container {\n  background-color: #fff;\n  padding: 30px;\n  max-width: 500px;\n  max-height: 100vh;\n  border-radius: 4px;\n  overflow-y: auto;\n  box-sizing: border-box;\n}\n\n.modal__header {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n}\n\n.modal__title {\n  margin-top: 0;\n  margin-bottom: 0;\n  font-weight: 600;\n  font-size: 1.25rem;\n  line-height: 1.25;\n  color: #00449e;\n  box-sizing: border-box;\n}\n\n.modal__close {\n  background: transparent;\n  border: 0;\n}\n\n.modal__header .modal__close:before { content: \"\\2715\"; }\n\n.modal__content {\n  margin-top: 2rem;\n  margin-bottom: 2rem;\n  line-height: 1.5;\n  color: rgba(0,0,0,.8);\n}\n\n.modal__btn {\n  font-size: .875rem;\n  padding-left: 1rem;\n  padding-right: 1rem;\n  padding-top: .5rem;\n  padding-bottom: .5rem;\n  background-color: #e6e6e6;\n  color: rgba(0,0,0,.8);\n  border-radius: .25rem;\n  border-style: none;\n  border-width: 0;\n  cursor: pointer;\n  -webkit-appearance: button;\n  text-transform: none;\n  overflow: visible;\n  line-height: 1.15;\n  margin: 0;\n  will-change: transform;\n  -moz-osx-font-smoothing: grayscale;\n  -webkit-backface-visibility: hidden;\n  backface-visibility: hidden;\n  -webkit-transform: translateZ(0);\n  transform: translateZ(0);\n  transition: -webkit-transform .25s ease-out;\n  transition: transform .25s ease-out;\n  transition: transform .25s ease-out,-webkit-transform .25s ease-out;\n}\n\n.modal__btn:focus, .modal__btn:hover {\n  -webkit-transform: scale(1.05);\n  transform: scale(1.05);\n}\n\n.modal__btn-primary {\n  background-color: #00449e;\n  color: #fff;\n}\n\n\n\n/**************************\\\n  Demo Animation Style\n\\**************************/\n@keyframes mmfadeIn {\n    from { opacity: 0; }\n      to { opacity: 1; }\n}\n\n@keyframes mmfadeOut {\n    from { opacity: 1; }\n      to { opacity: 0; }\n}\n\n@keyframes mmslideIn {\n  from { transform: translateY(15%); }\n    to { transform: translateY(0); }\n}\n\n@keyframes mmslideOut {\n    from { transform: translateY(0); }\n    to { transform: translateY(-10%); }\n}\n\n.micromodal-slide {\n  display: none;\n}\n\n.micromodal-slide.is-open {\n  display: block;\n}\n\n.micromodal-slide[aria-hidden=\"false\"] .modal__overlay {\n  animation: mmfadeIn .3s cubic-bezier(0.0, 0.0, 0.2, 1);\n}\n\n.micromodal-slide[aria-hidden=\"false\"] .modal__container {\n  animation: mmslideIn .3s cubic-bezier(0, 0, .2, 1);\n}\n\n.micromodal-slide[aria-hidden=\"true\"] .modal__overlay {\n  animation: mmfadeOut .3s cubic-bezier(0.0, 0.0, 0.2, 1);\n}\n\n.micromodal-slide[aria-hidden=\"true\"] .modal__container {\n  animation: mmslideOut .3s cubic-bezier(0, 0, .2, 1);\n}\n\n.micromodal-slide .modal__container,\n.micromodal-slide .modal__overlay {\n  will-change: transform;\n}\n";
-    document.getElementsByTagName('head')[0].append(style);
-    var container = document.createElement('div');
+    document.getElementsByTagName("head")[0].append(style);
+    var container = document.createElement("div");
     container.innerHTML = modal;
-    document.getElementsByTagName('body')[0].append(container);
+    document.getElementsByTagName("body")[0].append(container);
     MicroModal.init();
     var status = false;
     function dialog() {
         if (window.EMOTIVA_CAMERA_PERMISSION_SHOW !== true || status == true)
             return;
-        console.log('showing permission dialog');
-        MicroModal.show('modal-1');
+        console.log("showing permission dialog");
+        MicroModal.show("modal-1");
         status = true;
     }
     exports.dialog = dialog;
     function hideDialog() {
         if (window.EMOTIVA_CAMERA_PERMISSION_SHOW !== true || status == false)
             return;
-        console.log('showing permission dialog');
-        MicroModal.close('modal-1');
+        console.log("showing permission dialog");
+        MicroModal.close("modal-1");
         status = false;
     }
     exports.hideDialog = hideDialog;

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Test distribution</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      API_URL = "https://dev.survey.panel.emotiva.it/api/v1.0.0";
+      ASSEMBLER_URL = "https://tranquil-oasis-05460.herokuapp.com/";
+      DEBUG = false;
+      TUTORIAL = false;
+      END = false;
+      VIDEO_SETUP = false;
+      BUNDLE_URL = "./bundle.js";
+
+      var e = document.getElementsByTagName("head")[0];
+
+      function n(n) {
+        var t = document.createElement("script");
+        t.type = "text/javascript";
+        var r = null,
+          a = new Promise((e, n) => {
+            r = e;
+          });
+        return (
+          (t.onload = r),
+          (t.crossOrigin = "anonymous"),
+          (t.src = n),
+          e.appendChild(t),
+          a
+        );
+      }
+
+      function t(n) {
+        var t = document.createElement("link");
+        (t.href = n), (t.rel = "stylesheet"), e.appendChild(t);
+      }
+
+      async function r() {
+        for (var e of s) await t(e);
+        for (var e of a) await n(e);
+        require(["index"], null);
+      }
+
+      var a = [
+          "//vjs.zencdn.net/7.8.2/video.min.js",
+          "https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js",
+          BUNDLE_URL,
+        ],
+        s = ["//vjs.zencdn.net/7.8.2/video-js.min.css"];
+      document.addEventListener("DOMContentLoaded", (e) => {
+        r();
+      });
+    </script>
+  </head>
+  <body>
+    <input
+      class=""
+      type="hidden"
+      name="sgE-90295936-1-8"
+      id="sgE-90295936-1-8-element"
+      value="testtest"
+    />
+    <input
+      class=""
+      type="hidden"
+      name="sgE-90295936-1-6"
+      id="sgE-90295936-1-6-element"
+      value="testtest"
+    />
+
+    <div class="sg-button-bar">
+      <input
+        type="submit"
+        class="sg-button sg-next-button"
+        id="sg_NextButton"
+        style="background-color: #187bcf"
+        name="sGizmoNextButton"
+        onclick="alert('Video Ended')"
+        aria-label="Avanti"
+        value="Avanti"
+      /><input
+        type="submit"
+        class="sg-button sg-back-button"
+        id="sg_BackButton"
+        formnovalidate=""
+        name="sGizmoBackButton"
+        onclick="$SG('sg_navchoice').value='sGizmoBackButton';return(true);"
+        aria-label="Indietro"
+        value="Indietro"
+      />
+    </div>
+
+    <script type="text/javascript">
+      SGAPI = { surveyData: {} }; // fake
+
+      SGAPI.surveyData["90356918"] = {
+        // Dummy data, as auto-compiled by alchemer on production
+        id: 90356918,
+        current_domain: "www.surveygizmo.eu",
+        customer_id: 90316546,
+        key: "11HXZL5AQ2VQ9BEUMZAR3DTMMKH708",
+        rtl: false,
+        session: "1607355097_5fce4ad93ff1e7.test_1",
+        progess: "0",
+        progress: 0,
+        minstep: "20",
+        ispreview: "false",
+        ismobile: "true",
+        language: "Italian",
+        page_direction: -3,
+        currency_glyph: "\u20ac",
+        title: "Montenegro 3",
+        options: {
+          forward_only: false,
+          file_session_download: false,
+          is_kiosk: false,
+          dynamic_number: true,
+        },
+        currentpage: 1,
+        pages: {
+          p1: {
+            id: 1,
+            title: "Domanda 1",
+            hidden: false,
+            haserrors: false,
+            shuffled: false,
+            xnumberselected: false,
+            piped: false,
+            pipevalue: "",
+            number: 1,
+            options: {},
+          },
+        },
+        messages: {
+          min_number: ":value is less than :min",
+          max_number: ":value is more than :max",
+          minimum_response:
+            "You must select at least :min checkbox(es). You have only selected :value checkbox(es).",
+          required: "This question is required",
+          save_n_continue_match: "Email address fields must match.",
+          save_n_continue_invalid: "Invalid Email address.",
+          save_n_continue_send_error:
+            "Please try again. There was a problem sending your email.",
+          uploading_file: "Uploading...",
+          deleting_file: "Deleting...",
+          file_prefix: "File:",
+          no_file_specified: "No file specified",
+          upload_error: "Error: Please try again",
+          invalid_file_type: "Error: File type not allowed",
+          invalid_file_size: "Error: File size is too large",
+          max_words: "Words used: :value out of :max.",
+          max_characters: "Characters used: :value out of :max.",
+          too_many_words:
+            "You have typed more words than allowed (:wordcount of :limit words)",
+          too_many_characters:
+            "You have typed more characters than allowed (:charactercount of :limit characters)",
+          min_words: "Words used: :value (minimum :min).",
+          min_characters: "Characters used: :value (minimum :min).",
+          not_enough_words:
+            "You have typed fewer words than required (:minwordcount of :minimum words)",
+          back_button: "Back",
+          next_button: "Next",
+          not_enough_characters:
+            "You have typed fewer characters than required (:mincharactercount of :minimum characters)",
+          invalid_email: '":value" is not a valid email address',
+          invalid_percent: ":value must be a percent",
+          invalid_min_date: "Date must be after or equal to :min",
+          invalid_max_date: "Date must be before or equal to :max",
+          must_be_positive_whole_number:
+            "Please supply a positive whole number (no decimals)",
+          must_be_whole_number: "Please supply a whole number (no decimals)",
+          selectone: "-- Please Select --",
+          invalid_number: ":value must be a number",
+          page_timer_warning: "This page has an initial time limit of",
+          page_timer_prompt:
+            "Would you like to disable all future page timer notifications?",
+          page_timer_expired: "Time limit expired. Submitting page.",
+        },
+        questions: {
+          8: {
+            id: 8,
+            title: "panel provider id",
+            type: "HIDDEN",
+            Runtime: {
+              Hidden: false,
+              Required: false,
+              Rendered: true,
+              HasErrors: false,
+              Errors: [],
+              Answered: false,
+              Number: "",
+              PipePrototype: false,
+              Piped: false,
+              PipedValue: null,
+              Data: {
+                atoms: [],
+              },
+            },
+            properties: {
+              required: false,
+              hidden: false,
+              cssclass: "sg-hidden",
+              map_key: "hidden",
+              defaulttext: {
+                Italian: '[url("m")]',
+              },
+            },
+            page: "p1",
+          },
+          6: {
+            id: 6,
+            title: "panel provider id",
+            type: "HIDDEN",
+            Runtime: {
+              Hidden: false,
+              Required: false,
+              Rendered: true,
+              HasErrors: false,
+              Errors: [],
+              Answered: false,
+              Number: "",
+              PipePrototype: false,
+              Piped: false,
+              PipedValue: null,
+              Data: {
+                atoms: [],
+              },
+            },
+            properties: {
+              required: false,
+              hidden: false,
+              cssclass: "sg-hidden",
+              map_key: "hidden",
+              defaulttext: {
+                Italian: '[url("m")]',
+              },
+            },
+            page: "p1",
+          },
+          2: {
+            id: 2,
+            title: "Vuoi proseguire?",
+            type: "RADIO",
+            Runtime: {
+              Hidden: false,
+              Required: false,
+              Rendered: true,
+              HasErrors: false,
+              Errors: [],
+              Answered: false,
+              Number: "1.",
+              PipePrototype: false,
+              Piped: false,
+              PipedValue: null,
+              Data: {
+                atoms: [],
+              },
+            },
+            properties: {
+              option_sort: "NONE",
+              required: false,
+              hidden: false,
+              orientation: "VERT",
+              validation_control: "",
+              cssclass: "sg-radio",
+              labels_right: true,
+              "inline-edit": true,
+              map_key: "radio",
+              alldepends: [],
+              newpipeorder: true,
+              show_title: false,
+              question_description: {
+                Italian: "",
+              },
+              question_description_above: false,
+              "required-when": false,
+              "soft-required": false,
+              disabled: false,
+              "pro-services-lock": false,
+              include_page_titles: "false",
+              include_page_numbers: "false",
+              include_question_numbers: "false",
+              alert_emails: [],
+              save_logic_data: "false",
+              messages: {
+                inputmask: [],
+                r_extreme_label: [],
+                l_extreme_label: [],
+                center_label: [],
+                right_label: [],
+                left_label: [],
+                na_text: [],
+                th_content: [],
+                conjoint_best_label: [],
+                conjoint_worst_label: [],
+                conjoint_none_label: [],
+                conjoint_card_label: [],
+                conjoint_error_label: [],
+                maxdiff_best_label: [],
+                maxdiff_worst_label: [],
+                maxdiff_attribute_label: [],
+                maxdiff_of: [],
+                maxdiff_sets_message: [],
+              },
+              date_format: "us",
+              min_date: "",
+              max_date: "",
+              col_sort: "NONE",
+              dhtml_hidden: false,
+              hide_all_after_until_value: false,
+              hide_after_response: false,
+              comments: false,
+              require_comments: false,
+              admin_question: false,
+              require_admin_question: false,
+              custom_css: "",
+              size: "",
+              break_after: false,
+              has_showhide_deps: false,
+              url: "http:\/\/",
+              lastmodified: 1606466938,
+            },
+            options: {
+              10001: {
+                id: 10001,
+                previous_version_id: null,
+                value: "Si",
+                title: {
+                  Italian: "Si",
+                },
+                group: null,
+                source: 0,
+                source_id: null,
+                source_option_id: null,
+                Runtime: {
+                  Disabled: false,
+                },
+                properties: {
+                  disabled: false,
+                },
+                image: null,
+                history: null,
+                parent_survey: null,
+                parent_question: null,
+                parent_section: null,
+                need_value: true,
+              },
+              10002: {
+                id: 10002,
+                previous_version_id: null,
+                value: "No",
+                title: {
+                  Italian: "No",
+                },
+                group: null,
+                source: 0,
+                source_id: null,
+                source_option_id: null,
+                Runtime: {
+                  Disabled: false,
+                },
+                properties: {
+                  disabled: false,
+                },
+                image: null,
+                history: null,
+                parent_survey: null,
+                parent_question: null,
+                parent_section: null,
+                need_value: true,
+              },
+            },
+            page: "p1",
+          },
+        },
+      };
+    </script>
+  </body>
+</html>
